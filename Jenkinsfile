@@ -1,20 +1,51 @@
 pipeline {
     agent any
-    tools {
-        nodejs "my-nodejs"
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        DOCKERHUB_REPO = "adkurnwn/nextjs-test"
     }
+
     stages {
-        stage("Build") {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/kurww/nextjs-ai-chatbot.git'
+            }
+        }
+
+        stage('Install Dependencies') {
             steps {
                 sh 'npm install'
+            }
+        }
+
+        stage('Build Next.js') {
+            steps {
                 sh 'npm run build'
             }
         }
-        stage("Start") {
+
+        stage('Docker Build') {
             steps {
-                sh 'npm start'
-                echo "App started successfully"
+                script {
+                    sh "docker build -t $DOCKERHUB_REPO:${env.BUILD_NUMBER} ."
+                }
             }
+        }
+
+        stage('Docker Login & Push') {
+            steps {
+                script {
+                    sh "echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin"
+                    sh "docker push $DOCKERHUB_REPO:${env.BUILD_NUMBER}"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker logout'
         }
     }
 }
