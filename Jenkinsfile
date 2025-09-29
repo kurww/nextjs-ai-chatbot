@@ -1,9 +1,13 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'node:20'  
+            args '-u root:root'
+    }
 
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
-        DOCKERHUB_REPO = "adkurnwn/nextjs-test"
+        DOCKERHUB_REPO = "adkurnwn/nextjs-ai-chatbot"
     }
 
     stages {
